@@ -6,7 +6,7 @@ COPY . .
 ENV GO111MODULE=on
 
 RUN go mod tidy && go mod vendor
-RUN cd app && go build -o main
+RUN go build -o main
 
 FROM alpine:latest
 

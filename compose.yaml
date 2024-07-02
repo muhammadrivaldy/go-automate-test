@@ -1,4 +1,54 @@
 services:
+  service:
+    container_name: service
+    image: go-automate-test:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles:
+      - service
+    ports:
+      - 80:80
+    environment:
+      DB_URL: database-mysql
+    command: ["./main", "service"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:80/api/v1/security/health/check",
+        ]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+      start_interval: 5s
+    depends_on:
+      migration:
+        condition: service_healthy
+
+  migration:
+    container_name: migration
+    image: go-automate-test:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles:
+      - migration
+    command: sleep infinity
+    healthcheck:
+      test: ./main migration
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+      start_interval: 5s
+    depends_on:
+      database-mysql:
+        condition: service_healthy
+
   database-mysql:
     container_name: database-mysql
     image: mysql:8.0.33

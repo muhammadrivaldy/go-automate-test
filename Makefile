@@ -1,5 +1,5 @@
 build:
-	docker image build -t service .
+	docker image build -t go-automate-test .
 
 create-migration:
 	@read -p "input the migration name: " name; \
