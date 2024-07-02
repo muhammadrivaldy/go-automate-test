@@ -21,6 +21,7 @@ func main() {
 		panic(err)
 	}
 
+	engine.GET("/health/check", func(c *gin.Context) { c.JSON(http.StatusOK, nil) })
 	engine.POST("/users", handlerCreateUser)
 	engine.GET("/users", handlerGetUsers)
 
