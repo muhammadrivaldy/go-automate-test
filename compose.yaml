@@ -13,13 +13,7 @@ services:
       DB_URL: database-mysql
     command: ["./main", "service"]
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:80/api/v1/security/health/check",
-        ]
+      test: ["CMD", "curl", "-f", "http://localhost:80/health/check"]
       interval: 5m
       timeout: 5s
       retries: 3
@@ -38,6 +32,8 @@ services:
     profiles:
       - migration
     command: sleep infinity
+    environment:
+      DB_URL: database-mysql
     healthcheck:
       test: ./main migration
       interval: 5m
