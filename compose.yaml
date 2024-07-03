@@ -7,6 +7,7 @@ services:
       dockerfile: Dockerfile
     profiles:
       - service
+      - integration-tests
     ports:
       - 80:80
     environment:
@@ -31,6 +32,7 @@ services:
       dockerfile: Dockerfile
     profiles:
       - migration
+      - integration-tests
     command: sleep infinity
     environment:
       DB_URL: database-mysql
@@ -51,6 +53,7 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     profiles:
       - dependencies
+      - integration-tests
     ports:
       - 3306:3306
     environment:
@@ -63,3 +66,19 @@ services:
       retries: 3
       start_period: 15s
       start_interval: 5s
+
+  integration-tests:
+    container_name: integration-tests
+    image: golang:1.21-alpine
+    profiles:
+      - integration-tests
+    environment:
+      BASE_URL: http://service
+    volumes:
+      - ./:/go/src
+    command: sh -c "cd /go/src && \
+      go test tests/create_users_test.go -v && \
+      go test tests/get_users_test.go -v"
+    depends_on:
+      service:
+        condition: service_healthy
