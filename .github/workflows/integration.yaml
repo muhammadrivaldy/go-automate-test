@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - master
-defaults:
-  run:
-    shell: bash
 jobs:
   integration-tests:
     name: Running integration tests
