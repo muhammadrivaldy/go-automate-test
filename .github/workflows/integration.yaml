@@ -1,0 +1,20 @@
+name: Run the Integration Tests
+run-name: Run the Integration Tests
+on:
+  push:
+    branches:
+      - master
+defaults:
+  run:
+    shell: bash
+jobs:
+  integration-tests:
+    name: Running integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Build the image
+        run: docker image build -t go-automate-test .
+      - name: Running the integration test
+        run: docker compose --profile integration-tests up --abort-on-container-exit --renew-anon-volumes --force-recreate --exit-code-from integration-tests
