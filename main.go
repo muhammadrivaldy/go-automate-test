@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redsync/redsync/v4"
@@ -19,7 +20,8 @@ import (
 )
 
 var sqlDB *sql.DB
-var rs *redsync.Redsync
+var redisClient *redis.Client
+var redisSync *redsync.Redsync
 
 func main() {
 
@@ -29,12 +31,8 @@ func main() {
 		panic(err)
 	}
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: "127.0.0.1:6379",
-	})
-
-	pool := goredis.NewPool(redisClient)
-	rs = redsync.New(pool)
+	redisClient = redis.NewClient(&redis.Options{Addr: "127.0.0.1:6379"})
+	redisSync = redsync.New(goredis.NewPool(redisClient))
 
 	processName := os.Args[1]
 
@@ -89,7 +87,8 @@ type Users struct {
 
 func handlerCreateUser(c *gin.Context) {
 
-	if err := rs.NewMutex("test-just"); err != nil {
+	mutex := redisSync.NewMutex("testing", redsync.WithExpiry(time.Second*10))
+	if err := mutex.Lock(); err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, nil)
 		return
