@@ -3,18 +3,23 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	goutil "github.com/muhammadrivaldy/go-util"
+	"github.com/redis/go-redis/v9"
 )
 
 var sqlDB *sql.DB
+var rs *redsync.Redsync
 
 func main() {
 
@@ -23,6 +28,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "127.0.0.1:6379",
+	})
+
+	pool := goredis.NewPool(redisClient)
+	rs = redsync.New(pool)
 
 	processName := os.Args[1]
 
@@ -62,7 +74,7 @@ func runService() {
 	engine.POST("/users", handlerCreateUser)
 	engine.GET("/users", handlerGetUsers)
 
-	engine.Run(":80")
+	engine.Run(":8080")
 }
 
 type User struct {
@@ -77,8 +89,15 @@ type Users struct {
 
 func handlerCreateUser(c *gin.Context) {
 
+	if err := rs.NewMutex("test-just"); err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, nil)
+		return
+	}
+
 	var user User
 	if err := c.Bind(&user); err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, nil)
 		return
 	}
@@ -86,6 +105,7 @@ func handlerCreateUser(c *gin.Context) {
 	const sqlInsertUser = `INSERT INTO mst_users (name, address) VALUES (?, ?)`
 
 	if _, err := sqlDB.Exec(sqlInsertUser, user.Name, user.Address); err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, nil)
 		return
 	}
